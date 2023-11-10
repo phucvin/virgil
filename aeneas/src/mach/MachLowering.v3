@@ -1394,7 +1394,6 @@ class MachLowering(mach: MachProgram, compiler: Compiler, config: MachLoweringCo
 			}
 		}
 		// allocate the array, store tag, and store length
-		mach.allocates = true;
 		var narr = genAlloc(oi.source, mach.machType(arrayType), size);
 		storeObjectTag(narr, arrayType);
 		ptrStore(Int.TYPE, narr, mach.getArrayLengthOffset(arrayType), nlen);
@@ -1403,23 +1402,19 @@ class MachLowering(mach: MachProgram, compiler: Compiler, config: MachLoweringCo
 	def genArrayAllocWithSize(source: Source, arrayType: Type, hsize: int, len: int, scale: int) -> SsaInstr {
 		var totalSize = mach.data.addrAlign.alignUp(hsize + len * scale);
 		// allocate the array with the known size
-		mach.allocates = true;
 		var narr = genAlloc(source, mach.machType(arrayType), context.graph.intConst(totalSize));
 		storeObjectTag(narr, arrayType); // store tag
 		ptrStore(Int.TYPE, narr, mach.getArrayLengthOffset(arrayType), context.graph.intConst(len)); // store length
 		return narr;
 	}
 	def genAlloc(source: Source, mtype: Type, size: SsaInstr) -> SsaInstr {
-		if (context.compiler.IrAlloc) {
-			var m = genAllocMethod(Int.TYPE);
-			var methodRef = IrSpec.new(m.receiver, TypeUtil.NO_TYPES, m);
-			var funcRep = mach.funcRep(methodRef);
-			var func = context.graph.valConst(funcRep.machType, mach.getCodeAddress(methodRef));
-			var op = V3Op.newCallAddress(funcRep); // XXX: cache
-			return apply(source, op, [func, context.graph.nullReceiver(), size]);
-		} else {
-			return apply(source, V3Op.newAlloc(mtype), [size]);
-		}
+		mach.allocates = true;
+		var m = genAllocMethod(Int.TYPE);
+		var methodRef = IrSpec.new(m.receiver, TypeUtil.NO_TYPES, m);
+		var funcRep = mach.funcRep(methodRef);
+		var func = context.graph.valConst(funcRep.machType, mach.getCodeAddress(methodRef));
+		var op = V3Op.newCallAddress(funcRep); // XXX: cache
+		return apply(source, op, [func, context.graph.nullReceiver(), size]);
 	}
 	def genArrayInit(oi: SsaApplyOp) -> SsaInstr {
 		if (config.ObjectSystem) return normId(oi);
@@ -1625,7 +1620,6 @@ class MachLowering(mach: MachProgram, compiler: Compiler, config: MachLoweringCo
 		var classType = oi.getType();
 		var size = mach.getObjectSize(classType, null);
 		// allocate the object
-		mach.allocates = true;
 		var nobj = genAlloc(oi.source, mach.machType(classType), context.graph.intConst(size));
 		storeObjectTag(nobj, classType);
 		if (method != null) {
@@ -2102,7 +2096,6 @@ class MachLowering(mach: MachProgram, compiler: Compiler, config: MachLoweringCo
 		var meth = IrMethod.new(receiverType, null, Function.sig(size, returnType));
 		meth.ssa = graph;
 		context.prog.ir.methods.put(meth);
-		mach.allocStub = mach.addrOfMethod(meth); // is implemented by IR
 		return mach.allocMethod = meth;
 	}
 	def genCallRiGc(ssa: SsaBuilder, p_size: SsaInstr) -> SsaInstr {
