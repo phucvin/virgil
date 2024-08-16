@@ -13,31 +13,31 @@ component Utf8 {
 		if (str == null) return -1;
 		return decodeUnicode(str, 0, str.length, nop);
 	}
-	// Encode {codepoint} into the {dest} array at {pos}, assuming there is
+	// Encode {codepoint} into the {dest} range, assuming there is
 	// enough space for up to maximum 4 bytes, returning the number of
 	// bytes used. If the codepoint cannot be encoded into UTF-8 (e.g. is
 	// invalid), return {0}.
-	def encode(codepoint: u32, dest: Array<byte>, pos: int) -> int {
+	def encode(codepoint: u32, dest: Range<byte>) -> int {
 		if (!isValidCodepoint(codepoint)) return 0;
 		if (codepoint < (1 << 7)) {
-			dest[pos] = byte.view(codepoint);
+			dest[0] = byte.view(codepoint);
 			return 1;
 		}
 		if (codepoint < (1 << 11)) {
-			dest[pos]   = byte.view((codepoint >> 6) | 0b11000000u);
-			dest[pos+1] = byte.view((0b00111111u & codepoint) | 0b10000000u);
+			dest[0]   = byte.view((codepoint >> 6) | 0b11000000u);
+			dest[1] = byte.view((0b00111111u & codepoint) | 0b10000000u);
 			return 2;
 		}
 		if (codepoint < (1 << 16)) {
-			dest[pos]   = byte.view((codepoint >> 12) | 0b11100000u);
-			dest[pos+1] = byte.view((0b00111111u & (codepoint >> 6)) | 0b10000000u);
-			dest[pos+2] = byte.view((0b00111111u & codepoint) | 0b10000000u);
+			dest[0]   = byte.view((codepoint >> 12) | 0b11100000u);
+			dest[1] = byte.view((0b00111111u & (codepoint >> 6)) | 0b10000000u);
+			dest[2] = byte.view((0b00111111u & codepoint) | 0b10000000u);
 			return 3;
 		}
-		dest[pos]   = byte.view((codepoint >> 18) | 0b11110000u);
-		dest[pos+1] = byte.view((0b00111111u & (codepoint >> 12)) | 0b10000000u);
-		dest[pos+2] = byte.view((0b00111111u & (codepoint >> 6)) | 0b10000000u);
-		dest[pos+3] = byte.view((0b00111111u & codepoint) | 0b10000000u);
+		dest[0]   = byte.view((codepoint >> 18) | 0b11110000u);
+		dest[1] = byte.view((0b00111111u & (codepoint >> 12)) | 0b10000000u);
+		dest[2] = byte.view((0b00111111u & (codepoint >> 6)) | 0b10000000u);
+		dest[3] = byte.view((0b00111111u & codepoint) | 0b10000000u);
 		return 4;
 	}
 	// Check if {codepoint} is valid for UTF-8 encoding.

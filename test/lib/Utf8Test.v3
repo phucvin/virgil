@@ -116,7 +116,7 @@ def TEST_BUFFER = Array<byte>.new(5);
 
 def assert_enc(t: LibTest, codepoint: u32, expected: Array<byte>) {
 	for (pos < 2) {
-		var got = Utf8.encode(codepoint, TEST_BUFFER, pos);
+		var got = Utf8.encode(codepoint, TEST_BUFFER[pos ...]);
 		if (got != expected.length) {
 			return t.fail2("expected %d byte encoding, got %d", expected.length, got);
 		}
