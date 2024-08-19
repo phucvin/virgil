@@ -5,51 +5,49 @@
 // as additional arithmetic routines.
 component Ints {
 	private def U32_0 = u32.view('0');
-	// Parse a decimal integer value beginning at the start of the range {a}. Returns a
-	// pair of the status (# of characters read if successful, <= 0 if failure),
-	// and the value.
-	def parseDecimal(a: Range<byte>) -> (/*status:*/int, /*value:*/int) {
-		if (a.length == 0) return (0, 0);
-		if (a[0] == '-') {
+	// Parse a decimal integer value in {input}. Returns a pair of the status (# of characters
+	// read if successful, <= 0 if failure), and the value.
+	def parseDecimal(input: Range<byte>) -> (/*status:*/int, /*value:*/int) {
+		if (input.length == 0) return (0, 0);
+		if (input[0] == '-') {
 			// parse positive decimal and negate
-			var r = parseDecM(a[1 ...], 214748364, 8);
+			var r = parseDecM(input[1 ...], 214748364, 8);
 			if (r.0 > 0) {
 				if (r.0 == 1 && r.1 == 0) return (-2, 0); // special case of -0
 				return (1 + r.0, int.view(0u - r.1));
 			}
 			return (r.0 - 1, 0);
 		}
-		var r = parseDecM(a, 214748364, 7);
+		var r = parseDecM(input, 214748364, 7);
 		if (r.0 > 0) return (r.0, int.view(r.1));
 		return (r.0, 0);
 	}
-	// Parse a positive decimal integer value beginning at the start of the range {a}. Returns a
-	// pair of the status (# of characters read if successful, <= 0 if failure),
-	// and the value.
-	def parsePosDecimal(a: Range<byte>) -> (/*status:*/int, /*value:*/u32) {
-		return parseDecM(a, 429496729, 6);
+	// Parse a positive decimal integer in {input}. Returns a pair of the status (# of
+	// characters read if successful, <= 0 if failure), and the value.
+	def parsePosDecimal(input: Range<byte>) -> (/*status:*/int, /*value:*/u32) {
+		return parseDecM(input, 429496729, 6);
 	}
-	private def parseDecM(a: Range<byte>, maxdiv10: u32, maxmod10: u32) -> (int, u32) {
+	private def parseDecM(input: Range<byte>, maxdiv10: u32, maxmod10: u32) -> (int, u32) {
 		var val = 0u, s = 0;
 		var max = s + 9;
-		if (max > a.length) max = a.length;
+		if (max > input.length) max = input.length;
 		// first 9 digits cannot overflow u32
 		if (s < max) {
-			var d = a[s] - U32_0;
+			var d = input[s] - U32_0;
 			if (d == 0) return (1, 0);
 			if (d > 9) return (s, val);
 			s++;
 			val = val * 10 + d;
 		}
 		while (s < max) {
-			var d = a[s] - U32_0;
+			var d = input[s] - U32_0;
 			if (d > 9) return (s, val);
 			s++;
 			val = val * 10 + d;
 		}
 		// check for 10th digit
-		if (s < a.length) {
-			var d = a[s] - U32_0;
+		if (s < input.length) {
+			var d = input[s] - U32_0;
 			if (d > 9) return (s, val);
 			s++;
 			// check for value overflow
@@ -58,31 +56,29 @@ component Ints {
 			}
 			val = val * 10 + d;
 			// check for 11th and more digit
-			if (s < a.length) {
-				var d = a[s] - U32_0;
+			if (s < input.length) {
+				var d = input[s] - U32_0;
 				if (d <= 9) return (-1 - s, val);
 			}
 		}
 		return (s, val);
 	}
-	// Parse a hexadecimal integer value prefixed with "0x" or "0X" starting at the beginning
-	// of the range {a}.
-	def parse0xHex(a: Range<byte>) -> (int, u32) {
-		if (a.length < 2) return (-1, 0);
-		if (a[0] != '0') return (-1, 0);
-		var x = a[1];
+	// Parse a hexadecimal integer value prefixed with "0x" or "0X" in {input}.
+	def parse0xHex(input: Range<byte>) -> (int, u32) {
+		if (input.length < 2) return (-1, 0);
+		if (input[0] != '0') return (-1, 0);
+		var x = input[1];
 		if (x != 'x' && x != 'X') return (-2, 0);
-		return parseHex0(a[2 ...], 2);
+		return parseHex0(input[2 ...], 2);
 	}
-	// Parse a hexadecimal integer value starting at the beginning of the range {a}.
-	def parseHex(a: Range<byte>) -> (int, u32) {
-		return parseHex0(a, 0);
+	// Parse a hexadecimal integer value in {input}.
+	def parseHex(input: Range<byte>) -> (int, u32) {
+		return parseHex0(input, 0);
 	}
-	// Parse a hexadecimal integer value starting at the beginning of the range {a}.
-	private def parseHex0(a: Range<byte>, prefix: int) -> (int, u32) {
+	private def parseHex0(input: Range<byte>, prefix: int) -> (int, u32) {
 		var accum = 0u, s = 0;
-		while (s < a.length) {
-			var ch = a[s];
+		while (s < input.length) {
+			var ch = input[s];
 			if (!Chars.isHex(ch)) break;
 			if (s >= 8) return (-8 - prefix, 0); // too long
 			accum = accum << 4 | u32.view(Chars.hexValue(ch));
@@ -91,23 +87,22 @@ component Ints {
 		var len = s;
 		return if(len == 0, (-1 - prefix, 0), (len + prefix, accum));
 	}
-	// Parse a binary integer value prefixed with "0b" or "0B" starting the beginning of the
-	// range {a}.
-	def parse0bBin(a: Range<byte>) -> (int, u32) {
-		if (a.length < 2) return (-1, 0);
-		if (a[0] != '0') return (-1, 0);
-		var b = a[1];
+	// Parse a binary integer value prefixed with "0b" or "0B" in {input}.
+	def parse0bBin(input: Range<byte>) -> (int, u32) {
+		if (input.length < 2) return (-1, 0);
+		if (input[0] != '0') return (-1, 0);
+		var b = input[1];
 		if (b != 'b' && b != 'B') return (-2, 0);
-		return parseBin0(a[2 ...], 2);
+		return parseBin0(input[2 ...], 2);
 	}
-	// Parse a binary integer value starting at the beginning of the range {a}.
-	def parseBin(a: Range<byte>) -> (int, u32) {
-		return parseBin0(a, 0);
+	// Parse a binary integer value in {input}.
+	def parseBin(input: Range<byte>) -> (int, u32) {
+		return parseBin0(input, 0);
 	}
-	private def parseBin0(a: Range<byte>, prefix: int) -> (int, u32) {
+	private def parseBin0(input: Range<byte>, prefix: int) -> (int, u32) {
 		var accum = 0u, s = 0;
-		while (s < a.length) {
-			var ch = a[s], v = ch - '0';
+		while (s < input.length) {
+			var ch = input[s], v = ch - '0';
 			if ((v & ~1) != 0) break;
 			if (s >= 32) return (-32, 0); // too long
 			accum = accum << 1 | v;
@@ -116,24 +111,24 @@ component Ints {
 		var len = s;
 		return if(len == 0, (-1 - prefix, 0), (len + prefix, accum));
 	}
-	// Render {val} in decimal into {a}, returning the number of characters output.
-	def renderDecimal(val: int, a: Range<byte>) -> int {
+	// Render {val} in decimal into {output}, returning the number of characters output.
+	def renderDecimal(val: int, output: Range<byte>) -> int {
 		if (val < 0) {
-			a[0] = '-';
-			return 1 + renderPosDecimal(u32.view(0 - val), a[1 ...]);
+			output[0] = '-';
+			return 1 + renderPosDecimal(u32.view(0 - val), output[1 ...]);
 		}
-		return renderPosDecimal(u32.view(val), a);
+		return renderPosDecimal(u32.view(val), output);
 	}
-	// Render {val} in decimal into {a}, returning the number of characters output.
-	def renderPosDecimal(val: u32, a: Range<byte>) -> int {
+	// Render {val} in decimal into {output}, returning the number of characters output.
+	def renderPosDecimal(val: u32, output: Range<byte>) -> int {
 		var p = 0;
 		if (val < 10) {  // fastpath for small integers.
-			a[p] = byte.view('0' + val);
+			output[p] = byte.view('0' + val);
 			return 1;
 		}
 		if (val < 100) { // fastpath for small integers.
-			a[p++] = byte.view('0' + (val / 10));
-			a[p++] = byte.view('0' + (val % 10));
+			output[p++] = byte.view('0' + (val / 10));
+			output[p++] = byte.view('0' + (val % 10));
 			return 2;
 		}
 		var nonZero = false;
@@ -142,7 +137,7 @@ component Ints {
 			var digit = val / radix;
 			val = val % radix;
 			if (digit != 0) nonZero = true;
-			if (nonZero) a[p++] = byte.view('0' + digit);
+			if (nonZero) output[p++] = byte.view('0' + digit);
 		}
 		return p;
 	}
@@ -183,4 +178,9 @@ enum IntParseResult(code: int) {
 	UNDERFLOW(-2),
 	TOO_LONG(-3),
 	EMPTY(-4)
+}
+
+type Parsed<T>(status: int, val: T) #unboxed {
+	def ok() -> bool { return status >= 0; }
+	def orElse(d: T) -> T { return if(status >= 0, val, d); }
 }
