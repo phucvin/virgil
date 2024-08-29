@@ -13,6 +13,9 @@ class Alignment(size: int) {
 	def alignUp(i: int) -> int {
 		return (i + add) & mask;
 	}
+	def alignDown64(i: long) -> long {
+		return (i >> shift) << shift;
+	}
 	def alignUp64(i: long) -> long {
 		return ((i + add) >> shift) << shift;
 	}

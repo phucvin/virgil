@@ -380,7 +380,7 @@ class MachProgram extends TargetProgram {
 			var size = w.pos - start;
 			var buf = TerminalBuffer.new();
 			buf.putv(r, null).puts(": ").putd(size).ln();
-			w.render(MachDataWriter.!(w).endAddr() - size, start, size, buf);
+			w.render(start, size, buf);
 			buf.outln();
 		}
 	}
@@ -501,7 +501,7 @@ class MachProgram extends TargetProgram {
 	def absolute(a: Addr) -> int {
 		if (a == null) return 0;
 		if (a.base != null) return absolute(a.base) + a.offset;
-		if (CiRuntime_Address.?(a)) return CiRuntime_Address.!(a).getAbs(runtime);
+		if (CiRuntime_Address.?(a)) return int.!(CiRuntime_Address.!(a).getAbs(runtime));
 		if (a.absolute == -1) {
 			var buf = TerminalBuffer.new();
 			buf.puts("address ").putcv(a, null).puts(" not fixed");
@@ -509,11 +509,11 @@ class MachProgram extends TargetProgram {
 		}
 		return a.absolute;
 	}
-	def printBin(irm: IrMethod, methodStart: int, w: MachDataWriter) {
+	def printBin(irm: IrMethod, startPos: int, w: MachDataWriter) {
 		var buf = TerminalBuffer.new();
-		var size = w.endAddr() - methodStart;
+		var size = w.end() - startPos;
 		irm.renderLong(buf).puts(": ").putd(size).puts(" bytes").ln();
-		w.render(methodStart, w.end() - size, size, buf);
+		w.render(startPos, size, buf);
 		buf.outln();
 	}
 	// layout the method tables
@@ -545,8 +545,8 @@ class MachProgram extends TargetProgram {
 	def reserveSupplementalCode(w: MachDataWriter) {
 		var reservedCodeSize = CLOptions.RESERVED_CODE_SIZE.get();
 		if (reservedCodeSize > 0) {
-			var size = int.!(reservedCodeSize);
-			runtime.recordReservedCode(w.posAddr(), size, w.pos);
+			var size = reservedCodeSize;
+			runtime.recordReservedCode(w.addr(), size, w.pos);
 			w.skipN(int.!(size));
 		}
 	}
@@ -674,8 +674,8 @@ class MachRtPageTable(
 		var pageTableAddr = w.endAddr();
 		pageTable.setAbs(rt, pageTableAddr);
 		var maxPage = rt.codePages(), maxEntry = entries.length;
-		var tableAddr = pageTableAddr + 4 * (maxPage + 1);
-		var tableEndAddr = tableAddr + maxEntry * 4;
+		var tableAddr = pageTableAddr + 4u * u64.!(maxPage + 1);
+		var tableEndAddr = tableAddr + 4u * u64.!(maxEntry);
 		table.setAbs(rt, tableAddr);
 		// encode the page table pointers
 		var lastPage = -1;
@@ -684,13 +684,13 @@ class MachRtPageTable(
 			var page = entries[i].0 >> shift;
 			if (page != lastPage) {
 				// first entry on new page, fill intervening pages
-				var entryAddr = tableAddr + i * 4;
-				for (j = lastPage; j < page; j++) w.put_b32(entryAddr);
+				var entryAddr = tableAddr + 4u * u64.!(i);
+				for (j = lastPage; j < page; j++) w.put_b32(int.view(entryAddr));
 				lastPage = page;
 			}
 		}
 		// encode the last entries of the table
-		for (j = lastPage; j < maxPage; j++) w.put_b32(tableEndAddr);
+		for (j = lastPage; j < maxPage; j++) w.put_b32(int.view(tableEndAddr)); // TODO(addr64)
 		// encode the table entries
 		var mask = rt.codeRegion.space.pageAlign.add;
 		for (i < maxEntry) {

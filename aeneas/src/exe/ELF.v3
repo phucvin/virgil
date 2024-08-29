@@ -158,12 +158,12 @@ class ElfHeader {
 class ElfProgramHeader {
 	var p_type: int;
 	var p_flags: int;
-	var p_offset: long;
-	var p_vaddr: long;
-	var p_paddr: long;
-	var p_filesz: long;
-	var p_memsz: long;
-	var p_align: long;
+	var p_offset: u64;
+	var p_vaddr: u64;
+	var p_paddr: u64;
+	var p_filesz: u64;
+	var p_memsz: u64;
+	var p_align: u64;
 	def encode32(w: DataWriter) {
 		w.put_b32(p_type);
 		w.put_b32(int.view(p_offset));
@@ -177,12 +177,12 @@ class ElfProgramHeader {
 	def encode64(w: DataWriter) {
 		w.put_b32(p_type);
 		w.put_b32(p_flags);
-		w.put_b64(p_offset);
-		w.put_b64(p_vaddr);
-		w.put_b64(p_paddr);
-		w.put_b64(p_filesz);
-		w.put_b64(p_memsz);
-		w.put_b64(p_align);
+		w.put_b64(long.view(p_offset));
+		w.put_b64(long.view(p_vaddr));
+		w.put_b64(long.view(p_paddr));
+		w.put_b64(long.view(p_filesz));
+		w.put_b64(long.view(p_memsz));
+		w.put_b64(long.view(p_align));
 	}
 }
 // Represents a section header entry; symbolic information for segments

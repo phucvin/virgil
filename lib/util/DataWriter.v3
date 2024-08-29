@@ -11,6 +11,7 @@ class DataWriter {
 	def var pos: int;			// current position
 	private var max: int;			// the maximum position ever accessed
 	var refill = DataWriter.growI2X;	// refill behavior
+	var startAddr: u64;			// address of pos = 0
 
 	// Write a byte.
 	def putb(data: int) -> this {
@@ -149,9 +150,26 @@ class DataWriter {
 		if (pos > max) max = pos; // remember the maximum pos
 		pos = npos;
 	}
+	// Set the current position to correspond to the address {naddr}.
+	def atAddr(naddr: u64) -> this {
+		return at(int.!(naddr - startAddr));
+	}
 	// Align the current position to a multiple of {size} bytes.
 	def align(size: int) -> this {
 		var rem = pos & (size - 1);
+		if (rem > 0) skipN(size - rem);
+	}
+	// Calculate the address of the current position.
+	def addr() -> u64 {
+		return u64.!(pos) + startAddr;
+	}
+	// Calculate the address of the maximum position ever accessed.
+	def endAddr() -> u64 {
+		return startAddr + u64.!(end());
+	}
+	// Align the current address to a multiple of {size} bytes, where {size} must be a power of 2.
+	def alignAddr(size: int) -> this {
+		var rem = (int.view(startAddr) + pos) & (size - 1);
 		if (rem > 0) skipN(size - rem);
 	}
 	// Return the maximum position ever accessed.
@@ -224,10 +242,10 @@ class DataWriter {
 		max = nmax;
 	}
 	// Render the data into the given {buf}.
-	def render(baseAddr: int, startPos: int, size: int, buf: StringBuilder) {
+	def render(startPos: int, size: int, buf: StringBuilder) {
 		var line = 16;
 		for (i = 0; i < size; i = i + line) {
-			buf.puts("  ").putx(baseAddr + i);
+			buf.puts("  ").putx(startAddr + u64.!(startPos));
 			buf.puts(": ");
 			var start = startPos + i;
 			var end = start + line;

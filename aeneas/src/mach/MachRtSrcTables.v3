@@ -164,13 +164,13 @@ class MachRtSrcTables(mach: MachProgram, rt: MachRuntime) {
 		return off;
 	}
 	// set absolute addresses for addresses in ex region and return the size
-	def layoutExRegion(startAddr: int) -> int {
+	def layoutExRegion(startAddr: u64) -> int {
 		for (l = exDests; l != null; l = l.tail) {
-			l.head.absolute = startAddr + l.head.offset;
+			l.head.setAbsolute(startAddr + u64.!(l.head.offset));
 		}
 		var size = exEntries.length * 6;
 		CiRuntimeModule.EX_START.setAbs(rt, startAddr);
-		CiRuntimeModule.EX_END.setAbs(rt, startAddr + size);
+		CiRuntimeModule.EX_END.setAbs(rt, startAddr + u64.!(size));
 		return size;
 	}
 	def frameSlots() -> int {
@@ -214,7 +214,7 @@ class MachRtSrcTables(mach: MachProgram, rt: MachRuntime) {
 		}
 		CiRuntimeModule.EX_STRINGS.setAbs(rt, w.endAddr());
 		for (i < exStringTable.rows.length) {
-			w.put_b32(exStringTable.rows[i].1 + stringAddr);
+			w.put_b32(exStringTable.rows[i].1 + int.!(stringAddr));
 		}
 	}
 }

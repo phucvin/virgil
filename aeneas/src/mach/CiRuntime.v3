@@ -60,10 +60,10 @@ class CiRuntime_Address extends Addr {
 	def index: int;
 	// Negative indices distinguish this address from "user" addresses.
 	new(name, index) super(null, null, -1 - index) { }
-	def setAbs(rt: MachRuntime, addr: int) {
+	def setAbs(rt: MachRuntime, addr: u64) {
 		rt.addrs[index] = addr;
 	}
-	def getAbs(rt: MachRuntime) -> int {
+	def getAbs(rt: MachRuntime) -> u64 {
 		return rt.addrs[index];
 	}
 }
