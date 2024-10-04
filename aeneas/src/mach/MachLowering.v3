@@ -500,8 +500,8 @@ class MachLowering(mach: MachProgram, compiler: Compiler, config: MachLoweringCo
 			NormRangeGetElemElem(index) =>	return genNormRangeGetElem(i_old, index);
 			NormRangeSetElem =>		return genNormRangeSetElem(i_old, 0);
 			NormRangeSetElemElem(index) =>	return genNormRangeSetElem(i_old, index);
-			ByteArrayGetField(offset) => return genByteArrayGetField(i_old, offset);
-			ByteArraySetField(offset) => return genByteArraySetField(i_old, offset);
+			ByteArrayGetField(offset, order) => return genByteArrayGetField(i_old, offset, order);
+			ByteArraySetField(offset, order) => return genByteArraySetField(i_old, offset, order);
 			ArrayGetElemElem(index) => 	return genArrayGetElem(i_old, index);
 			ArraySetElemElem(index) => 	return genArraySetElem(i_old, index);
 			ArrayGetLength => 		i_new = genArrayGetLength(i_old);
@@ -1501,7 +1501,7 @@ class MachLowering(mach: MachProgram, compiler: Compiler, config: MachLoweringCo
 		i_old.kill();
 		i_old.remove();
 	}
-	def genByteArrayGetField(i_old: SsaApplyOp, offset: int) {
+	def genByteArrayGetField(i_old: SsaApplyOp, offset: int, order: ByteOrder) { // TODO: byte order
 		var inputs = normRefs(i_old.inputs);
 		var narr = inputs[0], ni_start = inputs[1];
 		var fieldType = i_old.op.typeArgs[0];
@@ -1558,7 +1558,7 @@ class MachLowering(mach: MachProgram, compiler: Compiler, config: MachLoweringCo
 		if (config.Int32Arith && width <= 32) return Int.getType(false, 32);
 		return Int.getType(false, 64);
 	}
-	def genByteArraySetField(i_old: SsaApplyOp, offset: int) {
+	def genByteArraySetField(i_old: SsaApplyOp, offset: int, order: ByteOrder) { // TODO: byte order
 		var inputs = normRefs(i_old.inputs);
 		var narr = inputs[0], ni_start = inputs[1], nvalue = inputs[2];
 		var fieldType = i_old.op.typeArgs[0];
