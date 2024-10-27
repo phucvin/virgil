@@ -19,3 +19,7 @@ bin/v3c-x86-64-linux doc/tutorial/examples/Methods/Fibonacci.v3
 time ./Fibonacci
 
 > 0.6s
+
+cd test/
+
+./all.bash
